@@ -3,17 +3,20 @@ form.addEventListener('submit', addItem);
 const todoList = document.querySelector('.todo-list');
 todoList.addEventListener('click',change);
 const todoCompletedList = document.querySelector('.todo-completed');
-const crudId="88ad028d5b14412798f151e88788651b";
-function addItem(e){
+const crudId="e13ea8f583ca4e4eb42538ea85f3518d";
+async function addItem(e){
     e.preventDefault();
     const todo = {
         todoName:e.target.item.value,
         desc: e.target.description.value,
         completed:false
     };
-    axios.post('https://crudcrud.com/api/'+crudId+'/todoList',todo)
-    .then((res)=> addToList(res.data))
-    .catch((err)=>console.log(err));
+    try{
+        const res  = await axios.post('https://crudcrud.com/api/'+crudId+'/todoList',todo);
+        addToList(res.data);
+    }
+    catch(error){ console.log(error); }
+   // resetting the field 
     form.reset();
 }
 
@@ -26,49 +29,43 @@ function addToList(todo){
         todoList.appendChild(newTodo);
     }
     else{
-        newTodo.innerHTML=`<span>${todo.todoName} ${todo.desc}</span>`;
+        newTodo.innerHTML=`<span>${todo.todoName} ${todo.desc} on ${new Date().toLocaleDateString()}</span>`;
         todoCompletedList.appendChild(newTodo);
     }
 }
 
-window.addEventListener('DOMContentLoaded',()=>{
-    axios.get('https://crudcrud.com/api/'+crudId+'/todoList')
-    .then((res )=> {
+window.addEventListener('DOMContentLoaded',async ()=>{
+    try{
+        const res = await axios.get('https://crudcrud.com/api/'+crudId+'/todoList');
         for(let i=0;i<res.data.length;i++){
             addToList(res.data[i]);
         }
-    })
-    .catch((err)=>console.log(err));
+    }
+    catch(error){ console.log(error) }
 })
 
-function change(e){
-    var li = e.target.parentElement;
-    var todos;
-    let todo_id = li.id;
+async function change(e){
+    const li = e.target.parentElement;
+    const todo_id = li.id;
     
     if(e.target.classList.contains('delete')){
         if(confirm('Are you sure to delete?')){
             //deleting using id
             todoList.removeChild(li);
-            axios.delete('https://crudcrud.com/api/'+crudId+'/todoList/'+todo_id)
-            .then(res => console.log(res.status))
-            .catch((err)=> console.log(err));
+            try{
+                await axios.delete('https://crudcrud.com/api/'+crudId+'/todoList/'+todo_id);
+            }
+            catch(error) { console.log(error) }
         }
     }
     if(e.target.classList.contains('checked')){
-        axios.get('https://crudcrud.com/api/'+crudId+'/todoList/'+todo_id)
-        .then((res)=>{
-            
-            todoUpdated ={
-                todoName:res.data.todoName,
-                desc: res.data.desc,
-                completed:true
-            }
-            axios.put('https://crudcrud.com/api/'+crudId+'/todoList/'+todo_id,todoUpdated)
-            .then(() => addToList(todoUpdated))
-            .catch((err)=>console.log(err));
-        })
-        .catch((err) => console.log(err));
+        const todo = {
+            todoName: li.firstElementChild.textContent,
+            desc: '',
+            completed: true,
+          };
+        await axios.put('https://crudcrud.com/api/'+crudId+'/todoList/'+todo_id, todo);
         todoList.removeChild(li);
+        addToList(todo);
     }
 }
